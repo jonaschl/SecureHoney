@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     session=ssh_new();
     ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &timeout);
     sshbind=ssh_bind_new();
-    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BANNER, "SSH-2.0-billsSSH_3.6.3q3\r\n");
+    /*ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BANNER, "SSH-2.0-billsSSH_3.6.3q3\r\n");*/
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, LISTENADDRESS);
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port);
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, "ssh-rsa");
