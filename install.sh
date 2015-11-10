@@ -1,6 +1,6 @@
 #!/bin/bash
-ssh-keygen -t rsa -N '' -f /opt/SecureHoney/keys/honeykey
+ssh-keygen -t rsa -N '' -f /opt/securehoney/keys/honeykey
 make
 make install
-cp sshpot /opt/SecureHoney/sshpot
-chmod +x /opt/SecureHoney/sshpot
+cp sshpot /opt/securehoney/sshpot
+chmod +x /opt/securehoney/sshpot
