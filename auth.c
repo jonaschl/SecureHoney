@@ -106,16 +106,36 @@ int curl(char* con_time, char* client_ip, char* user, char* passwd) {
 
     return 0;
 }
-
+// Write all commands into  a logfile
 static int log_command(struct connection *c, char* command) {
+
+      FILE *f;
+      int r;
+
+      if ((f = fopen(LOGFILE, "a+")) == NULL) {
+          fprintf(stderr, "Unable to open %s\n", LOGFILE);
+          fclose(f);
+          return -1;
+      }
+
+      if (get_utc(c) <= 0) {
+          fprintf(stderr, "Error getting time\n");
+          fclose(f);
+          return -1;
+      }
+
+      if (get_client_ip(c) < 0) {
+          fprintf(stderr, "Error getting client ip\n");
+          fclose(f);
+          return -1;
+      }
+
+      if (DEBUG) { printf("%s %s %s\n", c->con_time, c->client_ip, command); }
+      r = fprintf(f, "%s %s %s\n", c->con_time, c->client_ip, command);
+      fclose(f);
 
     CURL *curl;
     char buf[500];
-
-    if (get_client_ip(c) < 0) {
-        fprintf(stderr, "Error getting client ip\n");
-        return -1;
-    }
 
     snprintf(buf, sizeof buf, "command=%s&client_ip=%s", command, c->client_ip);
     curl_global_init(CURL_GLOBAL_ALL);
@@ -125,7 +145,7 @@ static int log_command(struct connection *c, char* command) {
     curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
-    return 0;
+    return r;
 }
 
 static int authenticate(ssh_session session, struct connection *c) {
@@ -309,7 +329,7 @@ int handle_auth(ssh_session session) {
     } while(!chan);
 
     if(!chan) {
-        printf("Error: cleint did not ask for a channel session (%s)\n",
+        printf("Error: client did not ask for a channel session (%s)\n",
         ssh_get_error(session));
         ssh_finalize();
         return 1;
