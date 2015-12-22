@@ -27,14 +27,14 @@ static void usage(FILE *stream, int exit_code) {
 }
 
 
-/* Return the c-string `p' as an int if it is a valid port 
+/* Return the c-string `p' as an int if it is a valid port
  * in the range of MINPORT - MAXPORT, or -1 if invalid. */
 static int valid_port(char *p) {
     int port;
     char *endptr;
 
     port = strtol(p, &endptr, 10);
-    if (port >= MINPORT && port <= MAXPORT && !*endptr && errno == 0) 
+    if (port >= MINPORT && port <= MAXPORT && !*endptr && errno == 0)
         return port;
 
     return -1;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     /* Install the signal handlers to cleanup after children and at exit. */
     signal(SIGCHLD, (void (*)())cleanup);
     signal(SIGINT, (void(*)())wrapup);
-    
+
     //while(1){
     /* Create and configure the ssh session. */
     int timeout = 30;
@@ -138,10 +138,23 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     if (DEBUG) { printf("Listening on port %d.\n", port); }
+    if (DEBUG) {
+        switch (AUTHENTICATION) {
+          case 1:
+            printf("Authentication is not possible\n");
+            break;
+          case 2:
+            printf("Authentication is possible with every username and password\n");
+            break;
+          case 3:
+            printf("Authentication is possible with the username and password defined in config.h\n");
+            break;
+        }
+    }
 
     /* Loop forever, waiting for and handling connection attempts. */
     while (1) {
-        
+
         if (ssh_bind_accept(sshbind, session) == SSH_ERROR) {
             fprintf(stderr, "Error accepting a connection: `%s'.\n",ssh_get_error(sshbind));
             return -1;
