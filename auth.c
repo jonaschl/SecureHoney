@@ -25,18 +25,32 @@ static int get_utc(struct connection *c) {
 }
 
 static int auth_password(const char *user, const char *password){
-    if(strcmp(user,"root"))
-    return 0;
-    if(strcmp(password,"123456"))
-    return 0;
-    return 1; // authenticated
+    // return 1 (true) when authenticated 0 (false) when not authenticated
+    // case:  1 return everytime 0 (authentication is not possible)
+    //        2 return everytime 1 (authenticated with very password and every username)
+    //        3 return 1 when password = the PASSWORD and username = USERNAME
+    switch (AUTHENTICATION) {
+      case 1:
+        return 0;
+        break;
+      case 2:
+        return 1;
+        break;
+      case 3:
+        if(strcmp(user,"USERNAME"))
+        return 0; // not authenticated
+        if(strcmp(password,"PASSWORD"))
+        return 0; // not authenticated
+        return 1; // authenticated
+        break;
+    }
 }
 
 /* Stores the client's IP address in the connection sruct. */
 static int *get_client_ip(struct connection *c) {
     struct sockaddr_storage tmp;
     struct sockaddr_in *sock;
-    unsigned int len = MAXBUF;    
+    unsigned int len = MAXBUF;
     getpeername(ssh_get_fd(c->session), (struct sockaddr*)&tmp, &len);
     sock = (struct sockaddr_in *)&tmp;
     inet_ntop(AF_INET, &sock->sin_addr, c->client_ip, len);
@@ -47,41 +61,41 @@ static int *get_client_ip(struct connection *c) {
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
 static int log_attempt(struct connection *c, char* usr, char* pass) {
-    
+
     FILE *f;
     int r;
-    
+
     if ((f = fopen(LOGFILE, "a+")) == NULL) {
         fprintf(stderr, "Unable to open %s\n", LOGFILE);
         fclose(f);
         return -1;
     }
-    
+
     if (get_utc(c) <= 0) {
         fprintf(stderr, "Error getting time\n");
         fclose(f);
         return -1;
     }
-    
+
     if (get_client_ip(c) < 0) {
         fprintf(stderr, "Error getting client ip\n");
         fclose(f);
         return -1;
     }
-    
+
     if (DEBUG) { printf("%s %s %s %s\n", c->con_time, c->client_ip, usr, pass); }
     r = fprintf(f, "%s %s %s %s\n", c->con_time, c->client_ip, usr, pass);
     fclose(f);
     curl(c->con_time, c->client_ip, usr, pass);
-    
+
     return r;
 }
 
 int curl(char* con_time, char* client_ip, char* user, char* passwd) {
-    
+
     CURL *curl;
     char buf[500];
-    
+
     snprintf(buf, sizeof buf, "user=%s&pass=%s&con_time=&client_ip=%s", user, passwd, client_ip);
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
@@ -89,20 +103,20 @@ int curl(char* con_time, char* client_ip, char* user, char* passwd) {
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buf);
     curl_easy_perform(curl);
     curl_easy_cleanup(curl);
-    
+
     return 0;
 }
 
 static int log_command(struct connection *c, char* command) {
-    
+
     CURL *curl;
     char buf[500];
-    
+
     if (get_client_ip(c) < 0) {
         fprintf(stderr, "Error getting client ip\n");
         return -1;
     }
-    
+
     snprintf(buf, sizeof buf, "command=%s&client_ip=%s", command, c->client_ip);
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
@@ -110,14 +124,14 @@ static int log_command(struct connection *c, char* command) {
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buf);
     curl_easy_perform(curl);
     curl_easy_cleanup(curl);
-    
+
     return 0;
 }
 
 static int authenticate(ssh_session session, struct connection *c) {
-    
+
     ssh_message message;
-    
+
     do {
         message=ssh_message_get(session);
         if(!message)
@@ -144,7 +158,7 @@ static int authenticate(ssh_session session, struct connection *c) {
                 // not authenticated, send default message
                 ssh_message_reply_default(message);
                 break;
-                
+
                 case SSH_AUTH_METHOD_NONE:
                 default:
                 printf("User %s wants to auth with unknown auth %d\n",
@@ -166,19 +180,19 @@ static int authenticate(ssh_session session, struct connection *c) {
         ssh_message_free(message);
     } while (ssh_get_status(session) != SSH_CLOSED ||
     ssh_get_status(session) != SSH_CLOSED_ERROR);
-    
+
     return 0;
 }
 
 int Readline(ssh_channel chan, void *vptr, int maxlen) {
-    
+
     int n, rc,ctr;
     char    c, c1, c2, *buffer, *buf2;
     buffer = vptr;
-    
+
     for ( n = 1; n < maxlen; n++ ) {
         if ( (rc = ssh_channel_read(chan, &c, 1, 0)) == 1 ) {
-            
+
             if(ctr > 0){
                 ctr = ctr +1;
             }
@@ -187,7 +201,7 @@ int Readline(ssh_channel chan, void *vptr, int maxlen) {
                 c1=NULL;
                 c2=NULL;
             }
-            
+
             if ( c == '\r' || c == '\n' ){
                 printf("got a new line.\n");
                 ssh_channel_write(chan,"\r\n[test@oracle ~]$ ",19);
@@ -235,26 +249,26 @@ int Readline(ssh_channel chan, void *vptr, int maxlen) {
         }
     }
     *buffer = 0;
-    
+
     return n;
 }
 
 /* Logs password auth attempts. Always replies with SSH_MESSAGE_USERAUTH_FAILURE. */
 int handle_auth(ssh_session session) {
-    
+
     struct connection con;
     con.session = session;
-    
+
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
-    
+
     /* Perform key exchange. */
     if (ssh_handle_key_exchange(con.session)) {
         fprintf(stderr, "Error exchanging keys: `%s'.\n", ssh_get_error(con.session));
         return -1;
     }
     if (DEBUG) { printf("Successful key exchange.\n"); }
-    
+
     /* Wait for a message, which should be an authentication attempt. Send the default
     * reply if it isn't. Log the attempt and quit. */
     ssh_message message;
@@ -266,7 +280,7 @@ int handle_auth(ssh_session session) {
     int sftp=0;
     int i;
     int r;
-    
+
     /* proceed to authentication */
     auth = authenticate(session, &con);
     if(!auth){
@@ -274,8 +288,8 @@ int handle_auth(ssh_session session) {
         ssh_disconnect(session);
         return 1;
     }
-    
-    
+
+
     /* wait for a channel session */
     do {
         message = ssh_message_get(session);
@@ -293,14 +307,14 @@ int handle_auth(ssh_session session) {
             break;
         }
     } while(!chan);
-    
+
     if(!chan) {
         printf("Error: cleint did not ask for a channel session (%s)\n",
         ssh_get_error(session));
         ssh_finalize();
         return 1;
     }
-    
+
     /* wait for a shell */
     do {
         message = ssh_message_get(session);
@@ -323,38 +337,38 @@ int handle_auth(ssh_session session) {
             break;
         }
     } while(!shell);
-    
+
     if(!shell) {
         printf("Error: No shell requested (%s)\n", ssh_get_error(session));
         return 1;
     }
 
     ssh_channel_write(chan, "Welcome to SSH\r\n\r\n[test@oracle ~]$ ", 35);
-    
+
     while((i = Readline(chan, buff2, 1024)) > 0){
- 
+
         printf("Received: (%d chars) %s\n",i-1,buff2);
-        
+
         char buf[i];
         snprintf(buf, sizeof buf, "%s", buff2);
-        
+
         log_command(&con, buf);
-        
+
         if(strstr(buff2,"wget") != NULL){
             printf("This is the url to get: %.*s\n", sizeof(buff2)-5, buff2 + 5);
         }
-        
+
         if(strstr(buff2,"exit")){
             printf("got exit.\n");
             ssh_disconnect(session);
             return 0;
         }
-        
+
         memset(&buff2, 0, sizeof(buff2));
     }
-    
+
     ssh_disconnect(session);
-    
+
     if (DEBUG) { printf("Exiting child.\n"); }
     return 0;
 }
