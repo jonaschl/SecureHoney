@@ -1,19 +1,19 @@
 #include "auth.h"
 #include "config.h"
-#include <libssh/libssh.h>;
-#include <libssh/server.h>;
-#include <stdio.h>;
-#include <stdlib.h>;
-#include <string.h>;
-#include <errno.h>;
-#include <unistd.h>;
-#include <pty.h>;
-#include <time.h>;
-#include <sys/socket.h>;
-#include <arpa/inet.h>;
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <pty.h>
+#include <time.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
-#include <poll.h>;
-#include <pty.h>;
+#include <poll.h>
+#include <pty.h>
 
 
 /* Stores the current UTC time. Returns 0 on error. */
