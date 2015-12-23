@@ -269,9 +269,8 @@ int handle_auth(ssh_session session) {
     char buff2[2048];
     int auth=0;
     int shell=0;
-    int sftp=0;
     int i;
-    int r;
+
 
     /* proceed to authentication */
     auth = authenticate(session, &con);
