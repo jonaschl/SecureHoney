@@ -11,11 +11,10 @@
 #include <time.h>;
 #include <sys/socket.h>;
 #include <arpa/inet.h>;
-#include <curl/curl.h>;
+
 #include <poll.h>;
 #include <pty.h>;
 
-int curl (char*, char*, char*, char*);
 
 /* Stores the current UTC time. Returns 0 on error. */
 static int get_utc(struct connection *c) {
@@ -86,26 +85,11 @@ static int log_attempt(struct connection *c, char* usr, char* pass) {
     if (DEBUG) { printf("%s %s %s %s\n", c->con_time, c->client_ip, usr, pass); }
     r = fprintf(f, "%s %s %s %s\n", c->con_time, c->client_ip, usr, pass);
     fclose(f);
-    curl(c->con_time, c->client_ip, usr, pass);
 
     return r;
 }
 
-int curl(char* con_time, char* client_ip, char* user, char* passwd) {
 
-    CURL *curl;
-    char buf[500];
-
-    snprintf(buf, sizeof buf, "user=%s&pass=%s&con_time=&client_ip=%s", user, passwd, client_ip);
-    curl_global_init(CURL_GLOBAL_ALL);
-    curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, "http://securehoney.net/log_login.php");
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buf);
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-
-    return 0;
-}
 // Write all commands into  a logfile
 static int log_command(struct connection *c, char* command) {
 
@@ -133,18 +117,6 @@ static int log_command(struct connection *c, char* command) {
       if (DEBUG) { printf("%s %s %s\n", c->con_time, c->client_ip, command); }
       r = fprintf(f, "%s %s %s\n", c->con_time, c->client_ip, command);
       fclose(f);
-
-    CURL *curl;
-    char buf[500];
-
-    snprintf(buf, sizeof buf, "command=%s&client_ip=%s", command, c->client_ip);
-    curl_global_init(CURL_GLOBAL_ALL);
-    curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, "http://securehoney.net/log_shell.php");
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buf);
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-
     return r;
 }
 
