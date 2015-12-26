@@ -14,6 +14,8 @@ struct connection {
     const char *banner;
     const char *cipher_out;
     const char *cipher_in;
+    int protocol_version;
+    int openssh_version;
 };
 
 int handle_auth(ssh_session session);

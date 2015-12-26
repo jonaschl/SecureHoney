@@ -59,7 +59,7 @@ static int *get_client_ip(struct connection *c) {
 
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
-static int log_attempt(struct connection *c, const char *username, const char* password) {
+static int log_attempt(struct connection *c, const char *username, const char* password, ssh_session session) {
 
     FILE *f;
     int r;
@@ -90,10 +90,13 @@ static int log_attempt(struct connection *c, const char *username, const char* p
 	  c->cipher_out = ssh_get_cipher_out(c->session);
 	  c->cipher_in = ssh_get_cipher_in(c->session);
 
+    // get protocol-version
+    c->protocol_version = ssh_get_version(c->session);
 
 
-    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in); }
-    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in);
+
+    if (DEBUG) { printf("%s %s %s %s %s %s %s %d  %d\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in, c->protocol_version, c->openssh_version); }
+    r = fprintf(f, "%s %s %s %s %s %s %s %d %d\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in, c->protocol_version, c->session);
     fclose(f);
 
     return r;
@@ -147,7 +150,7 @@ static int authenticate(ssh_session session, struct connection *c) {
                 ssh_message_auth_password(message));
                 log_attempt(c,
                 ssh_message_auth_user(message),
-                ssh_message_auth_password(message));
+                ssh_message_auth_password(message), session);
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
@@ -263,7 +266,8 @@ int handle_auth(ssh_session session) {
 
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
-
+    // call this function in log_attempt cause trouble
+    con.openssh_version = ssh_get_openssh_version(session);
     /* Perform key exchange. */
     if (ssh_handle_key_exchange(con.session)) {
         fprintf(stderr, "Error exchanging keys: `%s'.\n", ssh_get_error(con.session));
