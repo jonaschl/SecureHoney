@@ -9,11 +9,11 @@ struct connection {
     ssh_message message;
     char client_ip[MAXBUF];
     char con_time[MAXBUF];
-    char *user;
-    char *pass;
-    char *banner;
-    char *cipher_out;
-    char *cipher_in;
+    const char *user;
+    const char *pass;
+    const char *banner;
+    const char *cipher_out;
+    const char *cipher_in;
 };
 
 int handle_auth(ssh_session session);

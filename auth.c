@@ -1,19 +1,19 @@
 #include "auth.h"
 #include "config.h"
-#include <libssh/libssh.h>;
-#include <libssh/server.h>;
-#include <stdio.h>;
-#include <stdlib.h>;
-#include <string.h>;
-#include <errno.h>;
-#include <unistd.h>;
-#include <pty.h>;
-#include <time.h>;
-#include <sys/socket.h>;
-#include <arpa/inet.h>;
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <pty.h>
+#include <time.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
-#include <poll.h>;
-#include <pty.h>;
+#include <poll.h>
+#include <pty.h>
 
 
 /* Stores the current UTC time. Returns 0 on error. */
@@ -59,7 +59,7 @@ static int *get_client_ip(struct connection *c) {
 
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
-static int log_attempt(struct connection *c, char* usr, char* pass) {
+static int log_attempt(struct connection *c) {
 
     FILE *f;
     int r;
@@ -81,6 +81,13 @@ static int log_attempt(struct connection *c, char* usr, char* pass) {
         fclose(f);
         return -1;
     }
+    // get password and username
+
+
+    c->user = ssh_message_auth_user(c->message);	
+	c->pass = ssh_message_auth_password(c->message);
+
+
 
     // get client banner cipher in and cipher out
 
@@ -88,8 +95,10 @@ static int log_attempt(struct connection *c, char* usr, char* pass) {
 	  c->cipher_out = ssh_get_cipher_out(c->session);
 	  c->cipher_in = ssh_get_cipher_in(c->session);
 
-    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, usr, pass, c->banner, c->cipher_out, c->cipher_in); }
-    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, usr, pass, c->banner, c->cipher_out, c->cipher_in);
+
+
+    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, c->pass, c->pass, c->banner, c->cipher_out, c->cipher_in); }
+    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, c->pass, c->pass, c->banner, c->cipher_out, c->cipher_in);
     fclose(f);
 
     return r;
@@ -141,9 +150,7 @@ static int authenticate(ssh_session session, struct connection *c) {
                 printf("User %s wants to auth with pass %s\n",
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
-                log_attempt(c,
-                ssh_message_auth_user(message),
-                ssh_message_auth_password(message));
+                log_attempt(c);
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
@@ -275,9 +282,8 @@ int handle_auth(ssh_session session) {
     char buff2[2048];
     int auth=0;
     int shell=0;
-    int sftp=0;
     int i;
-    int r;
+
 
     /* proceed to authentication */
     auth = authenticate(session, &con);
