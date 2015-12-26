@@ -59,7 +59,7 @@ static int *get_client_ip(struct connection *c) {
 
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
-static int log_attempt(struct connection *c) {
+static int log_attempt(struct connection *c, const char *username, const char* password) {
 
     FILE *f;
     int r;
@@ -81,11 +81,6 @@ static int log_attempt(struct connection *c) {
         fclose(f);
         return -1;
     }
-    // get password and username
-
-
-    c->user = ssh_message_auth_user(c->message);	
-	c->pass = ssh_message_auth_password(c->message);
 
 
 
@@ -97,8 +92,8 @@ static int log_attempt(struct connection *c) {
 
 
 
-    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, c->pass, c->pass, c->banner, c->cipher_out, c->cipher_in); }
-    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, c->pass, c->pass, c->banner, c->cipher_out, c->cipher_in);
+    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in); }
+    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in);
     fclose(f);
 
     return r;
@@ -150,7 +145,9 @@ static int authenticate(ssh_session session, struct connection *c) {
                 printf("User %s wants to auth with pass %s\n",
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
-                log_attempt(c);
+                log_attempt(c,
+                ssh_message_auth_user(message),
+                ssh_message_auth_password(message));
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
