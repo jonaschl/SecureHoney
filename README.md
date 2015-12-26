@@ -3,7 +3,7 @@ Name:
     Secure Honey (http://SecureHoney.net)
 
 
-Description: 
+Description:
 
     SSH server honeypot that logs all usernames,
     password, IP address and time of every login attempt.
@@ -12,10 +12,10 @@ Description:
 Installation:
 
     1. Generate an RSA public key for use by the server:
-        > ssh-keygen -t rsa 
+        > ssh-keygen -t rsa
 
     2. Edit config.h to set the desired options. In particular, you must set
-       RSA_KEYFILE to the path to the public key generated in step one. LOGFILE 
+       RSA_KEYFILE to the path to the public key generated in step one. LOGFILE
        must be set to a location where the user running sshpot can write.
 
     3. Compile the software:
