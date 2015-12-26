@@ -11,6 +11,9 @@ struct connection {
     char con_time[MAXBUF];
     char *user;
     char *pass;
+    char *banner;
+    char *cipher_out;
+    char *cipher_in;
 };
 
 int handle_auth(ssh_session session);
