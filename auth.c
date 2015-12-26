@@ -15,6 +15,9 @@
 #include <poll.h>
 #include <pty.h>
 
+// for json
+#include <jansson.h>
+
 
 /* Stores the current UTC time. Returns 0 on error. */
 static int get_utc(struct connection *c) {
@@ -59,7 +62,7 @@ static int *get_client_ip(struct connection *c) {
 
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
-static int log_attempt(struct connection *c, const char *username, const char* password, ssh_session session) {
+static int log_attempt(struct connection *c, const char *username, const char* password) {
 
     FILE *f;
     int r;
@@ -92,13 +95,29 @@ static int log_attempt(struct connection *c, const char *username, const char* p
 
     // get protocol-version
     c->protocol_version = ssh_get_version(c->session);
+    //create new json object
+    json_t *c_json = json_object();
+    //add all informatinen to the json object
+    json_object_set_new(c_json, "time", json_string(c->con_time));
+	  json_object_set_new(c_json, "ip-adress", json_string(c->client_ip));
+	  json_object_set_new(c_json, "username", json_string(username));
+	  json_object_set_new(c_json, "password", json_string(password));
+	  json_object_set_new(c_json, "banner", json_string(c->banner));
+	  json_object_set_new(c_json, "cipher_in", json_string(c->cipher_in));
+	  json_object_set_new(c_json, "cipher_out", json_string(c->cipher_out));
+    json_object_set_new(c_json, "type", json_string("login-attempt"));
+    json_object_set_new(c_json, "protocol-version", json_integer(c->protocol_version));
+    json_object_set_new(c_json, "openssh-version", json_integer(c->openssh_version));
 
 
 
-    if (DEBUG) { printf("%s %s %s %s %s %s %s %d  %d\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in, c->protocol_version, c->openssh_version); }
-    r = fprintf(f, "%s %s %s %s %s %s %s %d %d\n", c->con_time, c->client_ip, username, password, c->banner, c->cipher_out, c->cipher_in, c->protocol_version, c->session);
+
+
+    if (DEBUG) { printf("%s\n", json_dumps(c_json, 0)); }
+    r = fprintf(f, "%s\n", json_dumps(c_json, 0));
     fclose(f);
-
+    // free the json object
+	  json_decref(c_json);
     return r;
 }
 
@@ -127,11 +146,26 @@ static int log_command(struct connection *c, char* command) {
           return -1;
       }
 
-      if (DEBUG) { printf("%s %s %s\n", c->con_time, c->client_ip, command); }
-      r = fprintf(f, "%s %s %s\n", c->con_time, c->client_ip, command);
+      //create new json object
+      json_t *c_json = json_object();
+      //add all informatinen to the json object
+      json_object_set_new(c_json, "time", json_string(c->con_time));
+  	  json_object_set_new(c_json, "ip-adress", json_string(c->client_ip));
+      json_object_set_new(c_json, "command", json_string(command));
+      json_object_set_new(c_json, "type", json_string("command"));
+
+
+
+
+
+
+      if (DEBUG) { printf("%s\n", json_dumps(c_json, 0)); }
+      r = fprintf(f, "%s\n", json_dumps(c_json, 0));
       fclose(f);
-    return r;
-}
+      // free the json object
+  	  json_decref(c_json);
+      return r;
+  }
 
 static int authenticate(ssh_session session, struct connection *c) {
 
@@ -150,7 +184,7 @@ static int authenticate(ssh_session session, struct connection *c) {
                 ssh_message_auth_password(message));
                 log_attempt(c,
                 ssh_message_auth_user(message),
-                ssh_message_auth_password(message), session);
+                ssh_message_auth_password(message));
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);

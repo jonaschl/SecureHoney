@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -ljansson
 CHMOD := $(shell which chmod)
 SETCAP := $(shell which setcap)
 USER := $(shell whoami)
