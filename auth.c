@@ -82,8 +82,14 @@ static int log_attempt(struct connection *c, char* usr, char* pass) {
         return -1;
     }
 
-    if (DEBUG) { printf("%s %s %s %s\n", c->con_time, c->client_ip, usr, pass); }
-    r = fprintf(f, "%s %s %s %s\n", c->con_time, c->client_ip, usr, pass);
+    // get client banner cipher in and cipher out
+
+    c->banner = ssh_get_clientbanner(c->session);
+	  c->cipher_out = ssh_get_cipher_out(c->session);
+	  c->cipher_in = ssh_get_cipher_in(c->session);
+
+    if (DEBUG) { printf("%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, usr, pass, c->banner, c->cipher_out, c->cipher_in); }
+    r = fprintf(f, "%s %s %s %s %s %s %s\n", c->con_time, c->client_ip, usr, pass, c->banner, c->cipher_out, c->cipher_in);
     fclose(f);
 
     return r;
