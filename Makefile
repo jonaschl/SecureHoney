@@ -7,7 +7,7 @@ USER := $(shell whoami)
 all: sshpot
 
 sshpot: main.o auth.o
-	$(CC) $(CFLAGS) $^ -lssh -lcurl -lutil -o $@
+	$(CC) $(CFLAGS) $^ -lssh -lutil -o $@
 
 main.o: main.c config.h
 	$(CC) $(CFLAGS) -c main.c
