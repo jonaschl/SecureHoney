@@ -62,7 +62,7 @@ static int *get_client_ip(struct connection *c) {
 
 /* Write interesting information about a connection attempt to  LOGFILE.
 * Returns -1 on error. */
-static int log_attempt(struct connection *c, const char *username, const char* password) {
+static int log_attempt_file(struct connection *c, const char *username, const char* password) {
 
     FILE *f;
     int r;
@@ -123,7 +123,7 @@ static int log_attempt(struct connection *c, const char *username, const char* p
 
 
 // Write all commands into  a logfile
-static int log_command(struct connection *c, char* command) {
+static int log_command_file(struct connection *c, char* command) {
 
       FILE *f;
       int r;
@@ -182,7 +182,7 @@ static int authenticate(ssh_session session, struct connection *c) {
                 printf("User %s wants to auth with pass %s\n",
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
-                log_attempt(c,
+                log_attempt_file(c,
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
                 if(auth_password(ssh_message_auth_user(message),
@@ -391,7 +391,7 @@ int handle_auth(ssh_session session) {
         char buf[i];
         snprintf(buf, sizeof buf, "%s", buff2);
 
-        log_command(&con, buf);
+        log_command_file(&con, buf);
 
         if(strstr(buff2,"wget") != NULL){
             printf("This is the url to get: %.*s\n", sizeof(buff2)-5, buff2 + 5);
