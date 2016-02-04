@@ -9,7 +9,7 @@
 
 #define AUTHENTICATION  2
 // USERNAME and PASSWORD are ignored when AUTHENTICATION = 1 or AUTHENTICATION = 2
-#define USERNAME        root
+#define USERNAME        "root"
 #define PASSWORD        123456
 
 #endif
