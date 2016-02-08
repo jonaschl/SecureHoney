@@ -39,9 +39,9 @@ static int auth_password(const char *user, const char *password){
         return 1;
         break;
       case 3:
-        if(strcmp(user,"USERNAME"))
+        if(strcmp(user, USERNAME))
         return 0; // not authenticated
-        if(strcmp(password,"PASSWORD"))
+        if(strcmp(password, PASSWORD))
         return 0; // not authenticated
         return 1; // authenticated
         break;
