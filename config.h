@@ -13,4 +13,10 @@
 #define USERNAME        "root"
 #define PASSWORD        "123456"
 
+// MYSQL Connection database
+#define MYSQL_HOST  "192.168.103.125"
+#define MYSQL_USER  "honeyssh"
+#define MYSQL_PWD   "password"
+
+
 #endif

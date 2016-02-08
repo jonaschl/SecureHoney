@@ -185,6 +185,10 @@ static int authenticate(ssh_session session, struct connection *c) {
                 log_attempt_file(c,
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
+                //mysq
+                log_attempt_mysql(c,
+                ssh_message_auth_user(message),
+                ssh_message_auth_password(message));
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
@@ -297,11 +301,12 @@ int handle_auth(ssh_session session) {
 
     struct connection con;
     con.session = session;
-
+    con.openssh_version = ssh_get_openssh_version(session);
+    con.protocol_version = ssh_get_version(session);
+    con.number = 0;
+    log_con1_mysql(&con);
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
-    // call this function in log_attempt cause trouble
-    con.openssh_version = ssh_get_openssh_version(session);
     /* Perform key exchange. */
     if (ssh_handle_key_exchange(con.session)) {
         fprintf(stderr, "Error exchanging keys: `%s'.\n", ssh_get_error(con.session));
@@ -325,9 +330,11 @@ int handle_auth(ssh_session session) {
     if(!auth){
         printf("Authentication error: %s\n", ssh_get_error(session));
         ssh_disconnect(session);
+        log_con_end_mysql(&con);
         return 1;
     }
 
+    log_con2_mysql(&con);
 
     /* wait for a channel session */
     do {
@@ -382,6 +389,7 @@ int handle_auth(ssh_session session) {
         return 1;
     }
 
+
     ssh_channel_write(chan, "Welcome to SSH\r\n\r\n[test@oracle ~]$ ", 35);
 
     while((i = Readline(chan, buff2, 1024)) > 0){
@@ -392,7 +400,8 @@ int handle_auth(ssh_session session) {
         snprintf(buf, sizeof buf, "%s", buff2);
 
         log_command_file(&con, buf);
-
+        //log command mysq
+        log_command_mysql(&con, buf);
         if(strstr(buff2,"wget") != NULL){
             printf("This is the url to get: %.*s\n", sizeof(buff2)-5, buff2 + 5);
         }
@@ -400,6 +409,7 @@ int handle_auth(ssh_session session) {
         if(strstr(buff2,"exit")){
             printf("got exit.\n");
             ssh_disconnect(session);
+            log_con_end_mysql(&con);
             return 0;
         }
 
@@ -407,7 +417,12 @@ int handle_auth(ssh_session session) {
     }
 
     ssh_disconnect(session);
+    // log the connection end time
+
+    log_con_end_mysql(&con);
 
     if (DEBUG) { printf("Exiting child.\n"); }
     return 0;
+
+
 }
