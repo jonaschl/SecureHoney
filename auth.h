@@ -27,5 +27,6 @@ int log_con1_mysql(struct connection *c);
 int log_con2_mysql(struct connection *c);
 int log_con_end_mysql(struct connection *c);
 int log_attempt_mysql(struct connection *c, const char *username, const char* password);
+int log_command_mysql(struct connection *c, char* command);
 
 #endif

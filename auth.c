@@ -400,7 +400,8 @@ int handle_auth(ssh_session session) {
         snprintf(buf, sizeof buf, "%s", buff2);
 
         log_command_file(&con, buf);
-        // log_command_mysql
+        //log command mysq
+        log_command_mysql(&con, buf);
         if(strstr(buff2,"wget") != NULL){
             printf("This is the url to get: %.*s\n", sizeof(buff2)-5, buff2 + 5);
         }
