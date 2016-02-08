@@ -300,14 +300,11 @@ int handle_auth(ssh_session session) {
 
     struct connection con;
     con.session = session;
-
-    // log_con_mysql
-
-
+    con.openssh_version = ssh_get_openssh_version(session);
+    con.protocol_version = ssh_get_version(session);
+    log_con1_mysql(&con);
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
-    // call this function in log_attempt cause trouble
-    con.openssh_version = ssh_get_openssh_version(session);
     /* Perform key exchange. */
     if (ssh_handle_key_exchange(con.session)) {
         fprintf(stderr, "Error exchanging keys: `%s'.\n", ssh_get_error(con.session));
@@ -334,6 +331,7 @@ int handle_auth(ssh_session session) {
         return 1;
     }
 
+    //log_con2_mysql(&con);
 
     /* wait for a channel session */
     do {
@@ -387,6 +385,7 @@ int handle_auth(ssh_session session) {
         printf("Error: No shell requested (%s)\n", ssh_get_error(session));
         return 1;
     }
+
 
     ssh_channel_write(chan, "Welcome to SSH\r\n\r\n[test@oracle ~]$ ", 35);
 

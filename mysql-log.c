@@ -1,8 +1,158 @@
-// log_con_mysql:
-// log every connection with session-id, ip, start time, banner, cipher-in, cipher-out, protocol-version, openssh-version
+#include "auth.h"
+#include "config.h"
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <pty.h>
+#include <time.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <poll.h>
+#include <pty.h>
+// mysql
+#include <mysql.h>
+#include <my_global.h>
+// for UINT64_MAX
+#include <stdint.h>
+
+// log_con1_mysql:
+// log every connection with session-id, ip, start time, protocol-version, openssh-version
 // log_con_end_mysql:
 // log set the end time for every connection
 // log_attempt_mysql:
 // log every attempt with session-id, number, user,password, time
 // log_command_mysql
 // log every command we received with sessio-id, number, command, time
+
+//helper functions
+
+// get the ip
+static int *get_client_ip(struct connection *c) {
+    struct sockaddr_storage tmp;
+    struct sockaddr_in *sock;
+    unsigned int len = MAXBUF;
+    getpeername(ssh_get_fd(c->session), (struct sockaddr*)&tmp, &len);
+    sock = (struct sockaddr_in *)&tmp;
+    inet_ntop(AF_INET, &sock->sin_addr, c->client_ip, len);
+    return 0;
+}
+// get time
+
+static int get_utc(struct connection *c) {
+    time_t t;
+    t = time(NULL);
+    return strftime(c->con_time, MAXBUF, "%Y-%m-%d %H:%M:%S", gmtime(&t));
+}
+
+// escpae strings for MYSQL
+
+int escape(char const *from, char **to, MYSQL *con){
+  unsigned long length;
+  int to_length;
+  length = strlen(from);
+  to_length = length*2+1;
+  *to = malloc(sizeof(char)*to_length);
+  mysql_real_escape_string(con, *to, from, length);
+  return 0;
+}
+
+// log_con_mysql
+int log_con1_mysql(struct connection *c){
+
+    // get the time
+    if (get_utc(c) <= 0) {
+        fprintf(stderr, "Error getting time\n");
+        return -1;
+    }
+    // get the client ip
+    if (get_client_ip(c) < 0) {
+        fprintf(stderr, "Error getting client ip\n");
+        return -1;
+    }
+    c->protocol_version = ssh_get_version(c->session);
+
+    //open the mysql connection
+    MYSQL *mysql_con = mysql_init(NULL);
+
+    if (mysql_con == NULL){
+        fprintf(stderr, "%s\n", mysql_error(mysql_con));
+        return -1;
+    }
+
+    if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
+        fprintf(stderr, "%s\n", mysql_error(mysql_con));
+        mysql_close(mysql_con);
+        return -1;
+    }
+
+    char *con_time_escaped;
+    escape(c->con_time, &con_time_escaped, mysql_con);
+
+    char *client_ip_escaped;
+    escape(c->client_ip, &client_ip_escaped, mysql_con);
+
+    char *protocol_version_escaped;
+    char protocol_version_string[10] = "";
+    sprintf(protocol_version_string, "%d", c->protocol_version);
+    escape(protocol_version_string, &protocol_version_escaped, mysql_con);
+
+    char *openssh_version_escaped;
+    char openssh_version_string[10] ="";
+    sprintf(openssh_version_string, "%d", c->openssh_version);
+    escape(openssh_version_string, &openssh_version_escaped, mysql_con);
+
+    // get the session_id
+    if (mysql_query(mysql_con, "SELECT MAX(`session-id`) AS `new-session-id` FROM honeyssh.connection;")) {
+    fprintf(stderr, "Query failed: %s\n", mysql_error(mysql_con));
+    }
+    else
+    {
+
+      MYSQL_RES *result = mysql_store_result(mysql_con);
+
+      if (!result) {
+        printf("Couldn't get results set: %s\n", mysql_error(mysql_con));
+      }
+      else
+      {
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(result)))
+          {
+            char *endp;
+            c->session_id = strtoull(row[0], &endp, 0) +1;
+          }
+      }
+    mysql_free_result(result);
+    }
+
+    // declare and reserve memory for the query string
+    char *mysql_query_string;
+    mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped) + strlen(client_ip_escaped) + strlen(protocol_version_escaped) + strlen(openssh_version_escaped)));
+
+    // build the query string
+    sprintf(mysql_query_string, "INSERT INTO `honeyssh`.`connection` (`session-id`, `ip`, `start-time`, `end-time`, `banner`, `cipher-in`, `cipher-out`, `protocol-version`, `openssh-version`, `id`) VALUES ('%llu', '%s', '%s', '%s', 'banner', 'cipher-in', 'cipher-out', '%s', '%s', 'NULL');",
+    c->session_id,
+    client_ip_escaped,
+    con_time_escaped,
+    con_time_escaped,
+    protocol_version_escaped,
+    openssh_version_escaped);
+
+    // execute the query
+    if (mysql_query(mysql_con, mysql_query_string)) {
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+    }
+
+    free(mysql_query_string);
+    free(con_time_escaped);
+    free(protocol_version_escaped);
+    free(openssh_version_escaped);
+
+    mysql_close(mysql_con);
+    return 0;
+
+}

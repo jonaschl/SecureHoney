@@ -2,6 +2,8 @@
 
 #define AUTH_H
 #include <libssh/libssh.h>
+// for UINT64
+#include <stdint.h>
 #define MAXBUF 100
 
 struct connection {
@@ -16,8 +18,11 @@ struct connection {
     const char *cipher_in;
     int protocol_version;
     int openssh_version;
+    uint64_t session_id;
+    int nummber;
 };
 
 int handle_auth(ssh_session session);
+int log_con1_mysql(struct connection *c);
 
 #endif
