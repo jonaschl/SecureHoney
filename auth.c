@@ -185,9 +185,10 @@ static int authenticate(ssh_session session, struct connection *c) {
                 log_attempt_file(c,
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
-
-                // log_attempt_mysql
-
+                //mysq
+                log_attempt_mysql(c,
+                ssh_message_auth_user(message),
+                ssh_message_auth_password(message));
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
@@ -302,6 +303,7 @@ int handle_auth(ssh_session session) {
     con.session = session;
     con.openssh_version = ssh_get_openssh_version(session);
     con.protocol_version = ssh_get_version(session);
+    con.number = 0;
     log_con1_mysql(&con);
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));

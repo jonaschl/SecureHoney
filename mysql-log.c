@@ -258,3 +258,63 @@ int log_con_end_mysql(struct connection *c) {
   mysql_close(mysql_con);
   return 0;
 }
+
+
+int log_attempt_mysql(struct connection *c, const char *username, const char* password){
+
+  // connect to the mysql server
+    MYSQL *mysql_con = mysql_init(NULL);
+
+  if (mysql_con == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      return -1;
+  }
+
+  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      mysql_close(mysql_con);
+      return -1;
+  }
+  // get the current time
+  if (get_utc(c) <= 0) {
+    fprintf(stderr, "Error getting time\n");
+    return -1;
+  }
+
+  // increment the number of attempts or commands
+  c->number = c->number +1;
+
+  // escape
+  char *con_time_escaped;
+  escape(c->con_time, &con_time_escaped, mysql_con);
+
+  char *username_escaped;
+  escape(username, &username_escaped, mysql_con);
+
+  char *password_escaped;
+  escape(password, &password_escaped, mysql_con);
+
+  char *mysql_query_string;
+  mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped) + strlen(username_escaped) + strlen(password_escaped)));
+
+  sprintf(mysql_query_string, "INSERT INTO `honeyssh`.`login` (`session-id`, `number`, `time`, `user`, `password`, `action`, `id`) VALUES ('%llu', '%d', '%s', '%s', '%s', '0', NULL);",
+  c->session_id,
+  c->number,
+  con_time_escaped,
+  username_escaped,
+  password_escaped);
+  // execute the query
+  if (mysql_query(mysql_con, mysql_query_string)) {
+    fprintf(stderr, "%s\n", mysql_error(mysql_con));
+  }
+
+  free(mysql_query_string);
+  free(con_time_escaped);
+  free(username_escaped);
+  free(password_escaped);
+
+  mysql_close(mysql_con);
+
+  return 0;
+
+}
