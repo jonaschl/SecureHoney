@@ -151,6 +151,7 @@ int log_con1_mysql(struct connection *c){
     free(con_time_escaped);
     free(protocol_version_escaped);
     free(openssh_version_escaped);
+    free(client_ip_escaped);
 
     mysql_close(mysql_con);
     return 0;
