@@ -15,7 +15,7 @@
 // MYSQL Connection database
 #define MYSQL_HOST  "192.168.103.125"
 #define MYSQL_USER  "honeyssh"
-#define MYSQL_PWD   "bMYC5yZma9LrVHR9"
+#define MYSQL_PWD   "password"
 
 
 #endif
