@@ -405,6 +405,7 @@ int handle_auth(ssh_session session) {
         if(strstr(buff2,"exit")){
             printf("got exit.\n");
             ssh_disconnect(session);
+            log_con_end_mysql(&con);
             return 0;
         }
 
@@ -412,8 +413,12 @@ int handle_auth(ssh_session session) {
     }
 
     ssh_disconnect(session);
-    // log_con_end_mysql
+    // log the connection end time
+
+    log_con_end_mysql(&con);
 
     if (DEBUG) { printf("Exiting child.\n"); }
     return 0;
+
+
 }

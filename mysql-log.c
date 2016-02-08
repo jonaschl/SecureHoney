@@ -213,3 +213,47 @@ int log_con2_mysql(struct connection *c){
     return 0;
 
 }
+
+int log_con_end_mysql(struct connection *c) {
+
+
+
+  MYSQL *mysql_con = mysql_init(NULL);
+
+  if (mysql_con == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      return -1;
+  }
+
+  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      mysql_close(mysql_con);
+      return -1;
+  }
+
+  // get the current time
+  if (get_utc(c) <= 0) {
+      fprintf(stderr, "Error getting time\n");
+      return -1;
+  }
+
+  char *con_time_escaped;
+  escape(c->con_time, &con_time_escaped, mysql_con);
+
+  char *mysql_query_string;
+  mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped)));
+
+  sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `end-time` = '%s' WHERE `connection`.`session-id` = %llu;",
+  con_time_escaped,
+  c->session_id);
+  // execute the query
+  if (mysql_query(mysql_con, mysql_query_string)) {
+    fprintf(stderr, "%s\n", mysql_error(mysql_con));
+  }
+
+  free(mysql_query_string);
+  free(con_time_escaped);
+
+  mysql_close(mysql_con);
+  return 0;
+}
