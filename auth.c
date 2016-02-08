@@ -185,6 +185,9 @@ static int authenticate(ssh_session session, struct connection *c) {
                 log_attempt_file(c,
                 ssh_message_auth_user(message),
                 ssh_message_auth_password(message));
+
+                // log_attempt_mysql
+
                 if(auth_password(ssh_message_auth_user(message),
                 ssh_message_auth_password(message))){
                     ssh_message_auth_reply_success(message,0);
@@ -298,6 +301,9 @@ int handle_auth(ssh_session session) {
     struct connection con;
     con.session = session;
 
+    // log_con_mysql
+
+
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
     // call this function in log_attempt cause trouble
@@ -392,7 +398,7 @@ int handle_auth(ssh_session session) {
         snprintf(buf, sizeof buf, "%s", buff2);
 
         log_command_file(&con, buf);
-
+        // log_command_mysql
         if(strstr(buff2,"wget") != NULL){
             printf("This is the url to get: %.*s\n", sizeof(buff2)-5, buff2 + 5);
         }
@@ -407,6 +413,7 @@ int handle_auth(ssh_session session) {
     }
 
     ssh_disconnect(session);
+    // log_con_end_mysql
 
     if (DEBUG) { printf("Exiting child.\n"); }
     return 0;
