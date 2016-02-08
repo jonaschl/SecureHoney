@@ -73,7 +73,6 @@ int log_con1_mysql(struct connection *c){
         fprintf(stderr, "Error getting client ip\n");
         return -1;
     }
-    c->protocol_version = ssh_get_version(c->session);
 
     //open the mysql connection
     MYSQL *mysql_con = mysql_init(NULL);
@@ -151,6 +150,64 @@ int log_con1_mysql(struct connection *c){
     free(con_time_escaped);
     free(protocol_version_escaped);
     free(openssh_version_escaped);
+
+    mysql_close(mysql_con);
+    return 0;
+
+}
+
+// log_con2_mysql
+
+int log_con2_mysql(struct connection *c){
+
+    //open the mysql connection
+    MYSQL *mysql_con = mysql_init(NULL);
+
+    if (mysql_con == NULL){
+        fprintf(stderr, "%s\n", mysql_error(mysql_con));
+        return -1;
+    }
+
+    if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
+        fprintf(stderr, "%s\n", mysql_error(mysql_con));
+        mysql_close(mysql_con);
+        return -1;
+    }
+
+    // get banner, cipher-in, cipher-out
+
+    c->banner = ssh_get_clientbanner(c->session);
+	  c->cipher_out = ssh_get_cipher_out(c->session);
+	  c->cipher_in = ssh_get_cipher_in(c->session);
+
+    char *banner_escaped;
+    escape(c->banner, &banner_escaped, mysql_con);
+
+    char *cipher_in_escaped;
+    escape(c->cipher_in, &cipher_in_escaped, mysql_con);
+
+    char *cipher_out_escaped;
+    escape(c->cipher_out, &cipher_out_escaped, mysql_con);
+
+    // calculate the query string length
+    char *mysql_query_string;
+    mysql_query_string = malloc(sizeof(char) * (300 + strlen(banner_escaped) + strlen(cipher_in_escaped) + strlen(cipher_out_escaped)));
+
+    sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `banner` = '%s', `cipher-in` = '%s', `cipher-out` = '%s' WHERE `connection`.`session-id` = %llu;",
+    banner_escaped,
+    cipher_in_escaped,
+    cipher_out_escaped,
+    c->session_id);
+    printf("%s\n", mysql_query_string);
+    // execute the query
+    if (mysql_query(mysql_con, mysql_query_string)) {
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+    }
+
+    free(mysql_query_string);
+    free(banner_escaped);
+    free(cipher_in_escaped);
+    free(cipher_out_escaped);
 
     mysql_close(mysql_con);
     return 0;

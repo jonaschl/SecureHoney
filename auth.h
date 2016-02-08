@@ -24,5 +24,6 @@ struct connection {
 
 int handle_auth(ssh_session session);
 int log_con1_mysql(struct connection *c);
+int log_con2_mysql(struct connection *c);
 
 #endif
