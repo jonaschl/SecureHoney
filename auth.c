@@ -330,6 +330,7 @@ int handle_auth(ssh_session session) {
     if(!auth){
         printf("Authentication error: %s\n", ssh_get_error(session));
         ssh_disconnect(session);
+        log_con_end_mysql(&con);
         return 1;
     }
 
