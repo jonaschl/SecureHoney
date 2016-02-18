@@ -8,7 +8,7 @@
 #define DEBUG           1
 
 // 1: authentication is unpossible 2: client is authenticated with every user name and password §. client is authenticated with username and password below
-#define AUTHENTICATION  2
+#define AUTHENTICATION  authmode
 // USERNAME and PASSWORD are ignored when AUTHENTICATION = 1 or AUTHENTICATION = 2
 #define USERNAME        "root"
 #define PASSWORD        "123456"
