@@ -324,7 +324,8 @@ int handle_auth(ssh_session session) {
     int shell=0;
     int i;
 
-
+    log_con2_mysql(&con);
+    
     /* proceed to authentication */
     auth = authenticate(session, &con);
     if(!auth){
@@ -333,8 +334,6 @@ int handle_auth(ssh_session session) {
         log_con_end_mysql(&con);
         return 1;
     }
-
-    log_con2_mysql(&con);
 
     /* wait for a channel session */
     do {
