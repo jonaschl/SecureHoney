@@ -73,6 +73,7 @@ static void wrapup(void) {
 int main(int argc, char *argv[]) {
     int port = DEFAULTPORT;
 
+
     /* Handle command line options. */
     int next_opt = 0;
     const char *short_opts = "hp:";
@@ -114,6 +115,14 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Invalid parameter `%s'\n\n", argv[optind]);
         usage(stderr, 1);
     }
+    uint64_t ID;
+    ID = 15000;
+    sleep(10);
+    if (get_first_session_id_mysql(&ID) < 0) {
+    fprintf(stderr,"Could not get the Session-if from the Database.\n");
+    exit(-1);
+    }
+    printf("Session in Database was at start time: %llu\n", ID );
 
     /* Install the signal handlers to cleanup after children and at exit. */
     signal(SIGCHLD, (void (*)())cleanup);
@@ -153,12 +162,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-
-    uint64_t ID;
-    ID = 15000;
-    get_first_session_id_mysql(&ID);
-    printf("Session in Database was at start time: %llu\n", ID );
 
 
     /* Loop forever, waiting for and handling connection attempts. */
