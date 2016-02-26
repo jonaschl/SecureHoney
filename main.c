@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
 
     uint64_t ID;
     get_first_session_id_mysql(&ID);
-
+    printf("Session in Database was at start time: %llu\n", ID );
 
 
     /* Loop forever, waiting for and handling connection attempts. */
