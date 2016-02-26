@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
 
 
     uint64_t ID;
+    ID = 15000;
     get_first_session_id_mysql(&ID);
     printf("Session in Database was at start time: %llu\n", ID );
 
