@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <stdint.h>
 
 #define MINPORT 0
 #define MAXPORT 65535
@@ -152,7 +153,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+
+    uint64_t ID;
+    get_first_session_id_mysql(&ID);
+
+
+
     /* Loop forever, waiting for and handling connection attempts. */
+
     while (1) {
 
         if (ssh_bind_accept(sshbind, session) == SSH_ERROR) {
@@ -160,7 +169,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         if (DEBUG) { printf("Accepted a connection.\n"); }
-
+        ID = ID +1;
         /*ssh_userauth_none(session, NULL);
         char *banner = ssh_get_issue_banner(session);
         if (banner)
@@ -175,8 +184,8 @@ int main(int argc, char *argv[]) {
                 exit(-1);
 
             case 0:
-                exit(handle_auth(session));
-
+                exit(handle_auth(session, ID));
+                break;
             default:
                 break;
         }

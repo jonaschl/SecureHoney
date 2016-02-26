@@ -60,6 +60,50 @@ int escape(char const *from, char **to, MYSQL *con){
   return 0;
 }
 
+int get_first_session_id_mysql(uint64_t *firstid) {
+
+  //open the mysql connection
+  MYSQL *mysql_con = mysql_init(NULL);
+
+  if (mysql_con == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      return -1;
+  }
+
+  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
+      fprintf(stderr, "%s\n", mysql_error(mysql_con));
+      mysql_close(mysql_con);
+      return -1;
+  }
+
+  if (mysql_query(mysql_con, "SELECT MAX(`session-id`) AS `new-session-id` FROM honeyssh.connection;")) {
+  fprintf(stderr, "Query failed: %s\n", mysql_error(mysql_con));
+  }
+  else
+  {
+
+    MYSQL_RES *result = mysql_store_result(mysql_con);
+
+    if (!result) {
+      printf("Couldn't get results set: %s\n", mysql_error(mysql_con));
+    }
+    else
+    {
+      MYSQL_ROW row;
+      while ((row = mysql_fetch_row(result)))
+        {
+          char *endp;
+          *firstid = strtoull(row[0], &endp, 0);
+        }
+    }
+    mysql_free_result(result);
+  }
+
+  mysql_close(mysql_con);
+  return 0;
+
+}
+
 // log_con_mysql
 int log_con1_mysql(struct connection *c){
 
@@ -103,30 +147,6 @@ int log_con1_mysql(struct connection *c){
     char openssh_version_string[10] ="";
     sprintf(openssh_version_string, "%d", c->openssh_version);
     escape(openssh_version_string, &openssh_version_escaped, mysql_con);
-
-    // get the session_id
-    if (mysql_query(mysql_con, "SELECT MAX(`session-id`) AS `new-session-id` FROM honeyssh.connection;")) {
-    fprintf(stderr, "Query failed: %s\n", mysql_error(mysql_con));
-    }
-    else
-    {
-
-      MYSQL_RES *result = mysql_store_result(mysql_con);
-
-      if (!result) {
-        printf("Couldn't get results set: %s\n", mysql_error(mysql_con));
-      }
-      else
-      {
-        MYSQL_ROW row;
-        while ((row = mysql_fetch_row(result)))
-          {
-            char *endp;
-            c->session_id = strtoull(row[0], &endp, 0) +1;
-          }
-      }
-    mysql_free_result(result);
-    }
 
     // declare and reserve memory for the query string
     char *mysql_query_string;

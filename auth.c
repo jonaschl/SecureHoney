@@ -297,13 +297,14 @@ int Readline(ssh_channel chan, void *vptr, int maxlen) {
 }
 
 /* Logs password auth attempts. Always replies with SSH_MESSAGE_USERAUTH_FAILURE. */
-int handle_auth(ssh_session session) {
+int handle_auth(ssh_session session, uint64_t new_session_id) {
 
     struct connection con;
     con.session = session;
     con.openssh_version = ssh_get_openssh_version(session);
     con.protocol_version = ssh_get_version(session);
     con.number = 0;
+    con.session_id = new_session_id;
     log_con1_mysql(&con);
     printf("ssh version: %d\n",ssh_get_version(session));
     printf("openssh version: %d\n", ssh_get_openssh_version(session));
