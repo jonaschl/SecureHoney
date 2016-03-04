@@ -154,11 +154,15 @@ int main(int argc, char *argv[]) {
     }
 
 
-
+    // Wait some seconds, because on some system (in a docker container) the MySQL query is not successful when we not wait.
+    printf("Sleep %d seconds\n", SLEEP_TIME);
+    sleep(SLEEP_TIME);
     uint64_t ID;
-    ID = 15000;
-    get_first_session_id_mysql(&ID);
-    printf("Session in Database was at start time: %llu\n", ID );
+    if (get_first_session_id_mysql(&ID) != 0 ) {
+    printf("Error getting the currently highest Session-ID from the Database. Abort.\n");
+    return -1;
+    };
+    printf("Highest Session-Id in Database was at start time: %llu\n", ID );
 
 
     /* Loop forever, waiting for and handling connection attempts. */

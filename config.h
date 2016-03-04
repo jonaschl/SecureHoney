@@ -18,5 +18,8 @@
 #define MYSQL_USER  "honeyssh"
 #define MYSQL_PWD   "mysqlpassword"
 
+// how long should the program wait before the first database query is executed
+#define SLEEP_TIME sleeptime
+
 
 #endif
