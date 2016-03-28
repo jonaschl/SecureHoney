@@ -265,7 +265,7 @@ int log_con_end_mysql(struct connection *c) {
   char *mysql_query_string;
   mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped)));
 
-  sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `end-time` = '%s', `action` = '0' WHERE `connection`.`id` = %llu;",
+  sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `end-time` = '%s', `action` = '0' WHERE `connection`.`session-id` = %llu;",
   con_time_escaped,
   c->session_id);
   // execute the query
