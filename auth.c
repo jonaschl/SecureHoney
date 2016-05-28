@@ -170,43 +170,41 @@ static int log_command_file(struct connection *c, char* command) {
 static int authenticate(ssh_session session, struct connection *c) {
 
     ssh_message message;
+     while (ssh_get_status(session) != SSH_CLOSED || ssh_get_status(session) != SSH_CLOSED_ERROR) {
 
-    do {
         message=ssh_message_get(session);
-        if(!message)
-        break;
+        if(!message){
+         printf("Failed to get the message from the ssh session",
+         not authenticated
+         return 0;
+        }
         switch(ssh_message_type(message)){
             case SSH_REQUEST_AUTH:
             switch(ssh_message_subtype(message)){
                 case SSH_AUTH_METHOD_PASSWORD:
-                printf("User %s wants to auth with pass %s\n",
-                ssh_message_auth_user(message),
-                ssh_message_auth_password(message));
-                log_attempt_file(c,
-                ssh_message_auth_user(message),
-                ssh_message_auth_password(message));
-                //mysq
-                log_attempt_mysql(c,
-                ssh_message_auth_user(message),
-                ssh_message_auth_password(message));
-                if(auth_password(ssh_message_auth_user(message),
-                ssh_message_auth_password(message))){
+                // print the password and username that we get from the session
+                printf("User %s wants to auth with pass %s\n", ssh_message_auth_user(message), ssh_message_auth_password(message));
+                // log the login attempt to a file
+                log_attempt_file(c, ssh_message_auth_user(message), ssh_message_auth_password(message));
+                //log the login attempt to mysql
+                log_attempt_mysql(c, ssh_message_auth_user(message), ssh_message_auth_password(message));
+                // check if we get the correct password and username
+                if( 1 = auth_password(ssh_message_auth_user(message), ssh_message_auth_password(message))){
+                    // session is authenticated
                     ssh_message_auth_reply_success(message,0);
                     ssh_message_free(message);
                     return 1;
                 }
+                // session is not authenticated, send default message
                 ssh_message_auth_set_methods(message,
                 SSH_AUTH_METHOD_PASSWORD |
                 SSH_AUTH_METHOD_INTERACTIVE);
-                // not authenticated, send default message
                 ssh_message_reply_default(message);
                 break;
 
                 case SSH_AUTH_METHOD_NONE:
                 default:
-                printf("User %s wants to auth with unknown auth %d\n",
-                ssh_message_auth_user(message),
-                ssh_message_subtype(message));
+                printf("User %s wants to auth with unknown auth %d\n", ssh_message_auth_user(message), ssh_message_subtype(message));
                 ssh_message_auth_set_methods(message,
                 SSH_AUTH_METHOD_PASSWORD |
                 SSH_AUTH_METHOD_INTERACTIVE);
@@ -214,16 +212,16 @@ static int authenticate(ssh_session session, struct connection *c) {
                 break;
             }
             break;
+            // we did not get a AUTH REQUEST
             default:
             ssh_message_auth_set_methods(message,
             SSH_AUTH_METHOD_PASSWORD |
             SSH_AUTH_METHOD_INTERACTIVE);
             ssh_message_reply_default(message);
+            break;
         }
         ssh_message_free(message);
-    } while (ssh_get_status(session) != SSH_CLOSED ||
-    ssh_get_status(session) != SSH_CLOSED_ERROR);
-
+    }
     return 0;
 }
 
@@ -326,7 +324,7 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
     int i;
 
     log_con2_mysql(&con);
-    
+
     /* proceed to authentication */
     auth = authenticate(session, &con);
     if(!auth){
