@@ -150,7 +150,7 @@ int log_con1_mysql(struct connection *c){
 
     // declare and reserve memory for the query string
     char *mysql_query_string;
-    mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped) + strlen(client_ip_escaped) + strlen(protocol_version_escaped) + strlen(openssh_version_escaped)));
+    mysql_query_string = malloc(sizeof(char) * (400 + strlen(con_time_escaped) + strlen(client_ip_escaped) + strlen(protocol_version_escaped) + strlen(openssh_version_escaped)));
 
     // build the query string
     sprintf(mysql_query_string, "INSERT INTO `honeyssh`.`connection` (`session-id`, `ip`, `start-time`, `end-time`, `banner`, `cipher-in`, `cipher-out`, `protocol-version`, `openssh-version`, `action`, `potmode`, `id`, `sensor-id`) VALUES ('%llu', '%s', '%s', '1970-01-01 00:00:00', 'none', 'none', 'none', '%s', '%s', '-1', '%d', 'NULL', '%s');",
