@@ -169,13 +169,14 @@ static int log_command_file(struct connection *c, char* command) {
 
 static int authenticate(ssh_session session, struct connection *c) {
 
+    int authentication_attempts = 1;
     ssh_message message;
-     while (ssh_get_status(session) != SSH_CLOSED || ssh_get_status(session) != SSH_CLOSED_ERROR) {
 
+    while (ssh_get_status(session) != SSH_CLOSED || ssh_get_status(session) != SSH_CLOSED_ERROR){
         message=ssh_message_get(session);
         if(!message){
-         printf("Failed to get the message from the ssh session",
-         not authenticated
+         printf("Failed to get the message from the ssh session");
+         //not authenticated
          return 0;
         }
         switch(ssh_message_type(message)){
@@ -189,17 +190,25 @@ static int authenticate(ssh_session session, struct connection *c) {
                 //log the login attempt to mysql
                 log_attempt_mysql(c, ssh_message_auth_user(message), ssh_message_auth_password(message));
                 // check if we get the correct password and username
-                if( 1 = auth_password(ssh_message_auth_user(message), ssh_message_auth_password(message))){
+                if( 1 == auth_password(ssh_message_auth_user(message), ssh_message_auth_password(message))){
                     // session is authenticated
                     ssh_message_auth_reply_success(message,0);
                     ssh_message_free(message);
                     return 1;
+                }
+                //check if we have reached the number of allowed authentication attempts
+                if (authentication_attempts == AUTHENTICATION_ATTEMPTS){
+                  ssh_message_free(message);
+                  // session is not authenticated because the maximal number of authentication attempts is reached
+                  return 2;
                 }
                 // session is not authenticated, send default message
                 ssh_message_auth_set_methods(message,
                 SSH_AUTH_METHOD_PASSWORD |
                 SSH_AUTH_METHOD_INTERACTIVE);
                 ssh_message_reply_default(message);
+                // one password authenticateion attempt is done
+                authentication_attempts++;
                 break;
 
                 case SSH_AUTH_METHOD_NONE:
@@ -327,13 +336,23 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
 
     /* proceed to authentication */
     auth = authenticate(session, &con);
-    if(!auth){
-        printf("Authentication error: %s\n", ssh_get_error(session));
-        ssh_disconnect(session);
-        log_con_end_mysql(&con);
-        return 1;
+    switch (auth) {
+      case 0:
+      printf("Authentication error: %s\n", ssh_get_error(session));
+      ssh_disconnect(session);
+      log_con_end_mysql(&con);
+      return 1;
+      break;
+      case 1:
+      printf("Session successful authenticated\n");
+      break;
+      case 2:
+      printf("Maximal number of authentication attempts reached\nExiting\n");
+      ssh_disconnect(session);
+      log_con_end_mysql(&con);
+      return 1;
+      break;
     }
-
     /* wait for a channel session */
     do {
         message = ssh_message_get(session);
@@ -396,7 +415,6 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
 
         char buf[i];
         snprintf(buf, sizeof buf, "%s", buff2);
-
         log_command_file(&con, buf);
         //log command mysq
         log_command_mysql(&con, buf);
