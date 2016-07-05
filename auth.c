@@ -112,12 +112,14 @@ static int log_attempt_file(struct connection *c, const char *username, const ch
 
 
 
-
-    if (DEBUG) { printf("%s\n", json_dumps(c_json, 0)); }
-    r = fprintf(f, "%s\n", json_dumps(c_json, 0));
+    char *buffer;
+    buffer = json_dumps(c_json, 0);
+    if (DEBUG) { printf("%s\n", buffer); }
+    r = fprintf(f, "%s\n", buffer);
     fclose(f);
     // free the json object
 	  json_decref(c_json);
+    free(buffer);
     return r;
 }
 
@@ -159,11 +161,14 @@ static int log_command_file(struct connection *c, char* command) {
 
 
 
-      if (DEBUG) { printf("%s\n", json_dumps(c_json, 0)); }
-      r = fprintf(f, "%s\n", json_dumps(c_json, 0));
+      char *buffer;
+      buffer = json_dumps(c_json, 0);
+      if (DEBUG) { printf("%s\n", buffer); }
+      r = fprintf(f, "%s\n", buffer);
       fclose(f);
       // free the json object
   	  json_decref(c_json);
+      free(buffer);
       return r;
   }
 
