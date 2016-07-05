@@ -160,7 +160,6 @@ static int log_command_file(struct connection *c, char* command) {
 
 
 
-
       char *buffer;
       buffer = json_dumps(c_json, 0);
       if (DEBUG) { printf("%s\n", buffer); }
@@ -323,6 +322,11 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
     /* Perform key exchange. */
     if (ssh_handle_key_exchange(con.session)) {
         fprintf(stderr, "Error exchanging keys: `%s'.\n", ssh_get_error(con.session));
+        ssh_disconnect(session);
+        // log the connection end time
+        log_con_end_mysql(&con);
+        // ssh cleanup
+        ssh_finalize();
         return -1;
     }
     if (DEBUG) { printf("Successful key exchange.\n"); }
@@ -345,7 +349,10 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
       case 0:
       printf("Authentication error: %s\n", ssh_get_error(session));
       ssh_disconnect(session);
+      // log the connection end time
       log_con_end_mysql(&con);
+      // ssh cleanup
+      ssh_finalize();
       return 1;
       break;
       case 1:
@@ -354,7 +361,10 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
       case 2:
       printf("Maximal number of authentication attempts reached\nExiting\n");
       ssh_disconnect(session);
+      // log the connection end time
       log_con_end_mysql(&con);
+      // ssh cleanup
+      ssh_finalize();
       return 1;
       break;
     }
@@ -379,6 +389,10 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
     if(!chan) {
         printf("Error: client did not ask for a channel session (%s)\n",
         ssh_get_error(session));
+        ssh_disconnect(session);
+        // log the connection end time
+        log_con_end_mysql(&con);
+        // ssh cleanup
         ssh_finalize();
         return 1;
     }
@@ -408,6 +422,11 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
 
     if(!shell) {
         printf("Error: No shell requested (%s)\n", ssh_get_error(session));
+        ssh_disconnect(session);
+        // log the connection end time
+        log_con_end_mysql(&con);
+        // ssh cleanup
+        ssh_finalize();
         return 1;
     }
 
@@ -430,7 +449,10 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
         if(strstr(buff2,"exit")){
             printf("got exit.\n");
             ssh_disconnect(session);
+            // log the connection end time
             log_con_end_mysql(&con);
+            // ssh cleanup
+            ssh_finalize();
             return 0;
         }
 
@@ -439,8 +461,9 @@ int handle_auth(ssh_session session, uint64_t new_session_id) {
 
     ssh_disconnect(session);
     // log the connection end time
-
     log_con_end_mysql(&con);
+    // ssh cleanup
+    ssh_finalize();
 
     if (DEBUG) { printf("Exiting child.\n"); }
     return 0;
