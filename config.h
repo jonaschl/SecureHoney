@@ -6,6 +6,8 @@
 #define RSA_KEYFILE     "/opt/securehoney/keys/honeykey"
 #define LOGFILE         "/opt/securehoney/logs/text.log"
 #define DEBUG           1
+// sensor-id = a value which make it possible to assign the logs to a specific sensor
+#define SENSOR_ID "Albus"
 
 // 1: authentication is unpossible 2: client is authenticated with every user name and password §. client is authenticated with username and password below
 #define AUTHENTICATION  authmode
