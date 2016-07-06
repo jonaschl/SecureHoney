@@ -10,19 +10,19 @@
 #define SENSOR_ID "Albus"
 
 // 1: authentication is unpossible 2: client is authenticated with every user name and password §. client is authenticated with username and password below
-#define AUTHENTICATION  3
+#define AUTHENTICATION  authmode
 #define AUTHENTICATION_ATTEMPTS 0
 // USERNAME and PASSWORD are ignored when AUTHENTICATION = 1 or AUTHENTICATION = 2
 #define USERNAME        "root"
 #define PASSWORD        "123456"
 
 // MYSQL Connection database
-#define MYSQL_HOST  "192.168.103.125"
+#define MYSQL_HOST  "mysqlhost"
 #define MYSQL_USER  "honeyssh"
-#define MYSQL_PWD   "bMYC5yZma9LrVHR9"
+#define MYSQL_PWD   "mysqlpassword"
 
 // how long should the program wait before the first database query is executed
-#define SLEEP_TIME 1
+#define SLEEP_TIME sleeptime
 
 
 #endif
