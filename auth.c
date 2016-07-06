@@ -25,27 +25,27 @@ static int get_utc(struct connection *c) {
     t = time(NULL);
     return strftime(c->con_time, MAXBUF, "%Y-%m-%d %H:%M:%S", gmtime(&t));
 }
-
+// For the auth_password() function
+// return 1 (true) when authenticated 0 (false) when not authenticated
+// case:  1 return everytime 0 (authentication is not possible)
+//        2 return everytime 1 (authenticated with very password and every username)
+//        3 return 1 when password = the PASSWORD and username = USERNAME
 static int auth_password(const char *user, const char *password){
-    // return 1 (true) when authenticated 0 (false) when not authenticated
-    // case:  1 return everytime 0 (authentication is not possible)
-    //        2 return everytime 1 (authenticated with very password and every username)
-    //        3 return 1 when password = the PASSWORD and username = USERNAME
-    switch (AUTHENTICATION) {
-      case 1:
-        return 0;
-        break;
-      case 2:
-        return 1;
-        break;
-      case 3:
-        if(strcmp(user, USERNAME))
-        return 0; // not authenticated
-        if(strcmp(password, PASSWORD))
-        return 0; // not authenticated
-        return 1; // authenticated
-        break;
-    }
+    #if (AUTHENTICATION == 1)
+    // not authenticated
+    return 0;
+    #endif
+    #if (AUTHENTICATION == 2)
+    //authenticated
+    return 1;
+    #endif
+    #if (AUTHENTICATION == 3)
+    if(strcmp(user, USERNAME))
+    return 0; // not authenticated
+    if(strcmp(password, PASSWORD))
+    return 0; // not authenticated
+    return 1; // authenticated
+    #endif
 }
 
 /* Stores the client's IP address in the connection sruct. */

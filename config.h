@@ -10,7 +10,7 @@
 #define SENSOR_ID "Albus"
 
 // 1: authentication is unpossible 2: client is authenticated with every user name and password §. client is authenticated with username and password below
-#define AUTHENTICATION  1
+#define AUTHENTICATION  3
 #define AUTHENTICATION_ATTEMPTS 0
 // USERNAME and PASSWORD are ignored when AUTHENTICATION = 1 or AUTHENTICATION = 2
 #define USERNAME        "root"
