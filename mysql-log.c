@@ -59,22 +59,33 @@ int escape(char const *from, char **to, MYSQL *con){
   mysql_real_escape_string(con, *to, from, length);
   return 0;
 }
+// start a mysql connection
+
+int mysql_start(MYSQL **mysql_con){
+
+*mysql_con = mysql_init(NULL);
+
+if (*mysql_con == NULL){
+    fprintf(stderr, "%s\n", mysql_error(*mysql_con));
+    return 1;
+}
+
+if (mysql_real_connect(*mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, CLIENT_MULTI_STATEMENTS) == NULL){
+    fprintf(stderr, "%s\n", mysql_error(*mysql_con));
+    mysql_close(*mysql_con);
+    return 1;
+}
+return 0;
+}
 
 int get_first_session_id_mysql(uint64_t *firstid) {
 
   //open the mysql connection
-  MYSQL *mysql_con = mysql_init(NULL);
-
-  if (mysql_con == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      return -1;
+  MYSQL *mysql_con;
+  if (mysql_start(&mysql_con) != 0){
+    return 1;
   }
 
-  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      mysql_close(mysql_con);
-      return -1;
-  }
 
   if (mysql_query(mysql_con, "SELECT MAX(`session-id`) AS `new-session-id` FROM honeyssh.connection;")) {
   fprintf(stderr, "Query failed: %s\n", mysql_error(mysql_con));
@@ -119,17 +130,9 @@ int log_con1_mysql(struct connection *c){
     }
 
     //open the mysql connection
-    MYSQL *mysql_con = mysql_init(NULL);
-
-    if (mysql_con == NULL){
-        fprintf(stderr, "%s\n", mysql_error(mysql_con));
-        return -1;
-    }
-
-    if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-        fprintf(stderr, "%s\n", mysql_error(mysql_con));
-        mysql_close(mysql_con);
-        return -1;
+    MYSQL *mysql_con;
+    if (mysql_start(&mysql_con) != 0){
+      return 1;
     }
 
     char *con_time_escaped;
@@ -184,17 +187,9 @@ int log_con1_mysql(struct connection *c){
 int log_con2_mysql(struct connection *c){
 
     //open the mysql connection
-    MYSQL *mysql_con = mysql_init(NULL);
-
-    if (mysql_con == NULL){
-        fprintf(stderr, "%s\n", mysql_error(mysql_con));
-        return -1;
-    }
-
-    if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-        fprintf(stderr, "%s\n", mysql_error(mysql_con));
-        mysql_close(mysql_con);
-        return -1;
+    MYSQL *mysql_con;
+    if (mysql_start(&mysql_con) != 0){
+      return 1;
     }
 
     // get banner, cipher-in, cipher-out
@@ -241,17 +236,10 @@ int log_con_end_mysql(struct connection *c) {
 
 
 
-  MYSQL *mysql_con = mysql_init(NULL);
-
-  if (mysql_con == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      return -1;
-  }
-
-  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      mysql_close(mysql_con);
-      return -1;
+  //open the mysql connection
+  MYSQL *mysql_con;
+  if (mysql_start(&mysql_con) != 0){
+    return 1;
   }
 
   // get the current time
@@ -285,18 +273,12 @@ int log_con_end_mysql(struct connection *c) {
 int log_attempt_mysql(struct connection *c, const char *username, const char* password){
 
   // connect to the mysql server
-    MYSQL *mysql_con = mysql_init(NULL);
-
-  if (mysql_con == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      return -1;
+  //open the mysql connection
+  MYSQL *mysql_con;
+  if (mysql_start(&mysql_con) != 0){
+    return 1;
   }
 
-  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      mysql_close(mysql_con);
-      return -1;
-  }
   // get the current time
   if (get_utc(c) <= 0) {
     fprintf(stderr, "Error getting time\n");
@@ -343,19 +325,12 @@ int log_attempt_mysql(struct connection *c, const char *username, const char* pa
 
 int log_command_mysql(struct connection *c, char* command){
 
-  // connect to the mysql server
-    MYSQL *mysql_con = mysql_init(NULL);
-
-  if (mysql_con == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      return -1;
+  //open the mysql connection
+  MYSQL *mysql_con;
+  if (mysql_start(&mysql_con) != 0){
+    return 1;
   }
 
-  if (mysql_real_connect(mysql_con, MYSQL_HOST, MYSQL_USER, MYSQL_PWD, NULL, MYSQL_PORT, NULL, 0) == NULL){
-      fprintf(stderr, "%s\n", mysql_error(mysql_con));
-      mysql_close(mysql_con);
-      return -1;
-  }
   // get the current time
   if (get_utc(c) <= 0) {
     fprintf(stderr, "Error getting time\n");
