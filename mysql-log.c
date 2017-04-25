@@ -171,6 +171,13 @@ int log_con1_mysql(struct connection *c){
       fprintf(stderr, "%s\n", mysql_error(mysql_con));
     }
 
+    MYSQL_RES *result;
+
+    if ((result = mysql_store_result(mysql_con)) == 0 && mysql_field_count(mysql_con) == 0 && mysql_insert_id(mysql_con) != 0)
+    {
+        c->id = mysql_insert_id(mysql_con);
+    }
+
     free(mysql_query_string);
     free(con_time_escaped);
     free(protocol_version_escaped);
@@ -211,11 +218,11 @@ int log_con2_mysql(struct connection *c){
     char *mysql_query_string;
     mysql_query_string = malloc(sizeof(char) * (300 + strlen(banner_escaped) + strlen(cipher_in_escaped) + strlen(cipher_out_escaped)));
 
-    sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `banner` = '%s', `cipher-in` = '%s', `cipher-out` = '%s' WHERE `connection`.`session-id` = %llu;",
+    sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `banner` = '%s', `cipher-in` = '%s', `cipher-out` = '%s' WHERE `connection`.`id` = %llu;",
     banner_escaped,
     cipher_in_escaped,
     cipher_out_escaped,
-    c->session_id);
+    c->id);
     printf("%s\n", mysql_query_string);
     // execute the query
     if (mysql_query(mysql_con, mysql_query_string)) {
@@ -254,9 +261,9 @@ int log_con_end_mysql(struct connection *c) {
   char *mysql_query_string;
   mysql_query_string = malloc(sizeof(char) * (300 + strlen(con_time_escaped)));
 
-  sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `end-time` = '%s', `action` = '0' WHERE `connection`.`session-id` = %llu;",
+  sprintf(mysql_query_string, "UPDATE `honeyssh`.`connection` SET `end-time` = '%s', `action` = '0' WHERE `connection`.`id` = %llu;",
   con_time_escaped,
-  c->session_id);
+  c->id);
   // execute the query
   if (mysql_query(mysql_con, mysql_query_string)) {
     fprintf(stderr, "%s\n", mysql_error(mysql_con));

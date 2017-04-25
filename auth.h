@@ -19,6 +19,7 @@ struct connection {
     int protocol_version;
     int openssh_version;
     uint64_t session_id;
+    uint64_t id;
     int number;
 };
 
